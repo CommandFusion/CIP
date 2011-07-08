@@ -20,16 +20,16 @@ CF.userMain = function() {
 		for (var sys in systems) {
 			CF.log("Initializing " + systems[sys] + "...");
 			new CIP({
-				IPID:				tokens[systems[sys] + ":IP_ID"],
+				IPID:			tokens[systems[sys] + ":IP_ID"],
 				systemName: 		systems[sys],
 				systemFeedbackName:	tokens[systems[sys] + ":Feedback_Name"],
 				DJoin_connectedFB:	tokens[systems[sys] + ":Online_Digital_Join"],
-				DJoin_Low:			tokens[systems[sys] + ":Digital_Low"],
-				DJoin_High:			tokens[systems[sys] + ":Digital_High"],
-				AJoin_Low:			tokens[systems[sys] + ":Analog_Low"],
-				AJoin_High:			tokens[systems[sys] + ":Analog_High"],
-				SJoin_Low:			tokens[systems[sys] + ":Serial_Low"],
-				SJoin_High:			tokens[systems[sys] + ":Serial_High"]
+				DJoin_Low:		tokens[systems[sys] + ":Digital_Low"],
+				DJoin_High:		tokens[systems[sys] + ":Digital_High"],
+				AJoin_Low:		tokens[systems[sys] + ":Analog_Low"],
+				AJoin_High:		tokens[systems[sys] + ":Analog_High"],
+				SJoin_Low:		tokens[systems[sys] + ":Serial_Low"],
+				SJoin_High:		tokens[systems[sys] + ":Serial_High"]
 			});
 		}
 	});
