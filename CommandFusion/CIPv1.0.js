@@ -43,7 +43,7 @@ CF.userMain = function() {
 var CIP = function(params){
 
 	//Instance reference
-	var self = 						this;
+	var self = 				this;
 	
 	//Version of this module = versionMajor.versionMinor
 	self.versionMajor =			1;
