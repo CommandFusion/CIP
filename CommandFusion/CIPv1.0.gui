@@ -1,0 +1,85 @@
+<gui>
+  <properties>
+    <project>CIPv1.0</project>
+    <designer>
+    </designer>
+    <size>
+      <portrait width="768" height="1024" />
+      <landscape width="1024" height="768" />
+    </size>
+    <imagefolder>
+    </imagefolder>
+    <debug loaderrors="0" connectionerrors="0" />
+  </properties>
+  <systems>
+    <system name="CIP1" ip="192.168.1.50" port="41794" protocol="tcp" alwayson="1" accept="0" ssl="0" maxconnections="0" heartbeatRx="" heartbeatTx="" heartbeatMode="-1" eom="" connectionStatus="0" disconnectionStatus="0">
+      <fb name="CIP1_Incoming_Data" regex="." />
+    </system>
+  </systems>
+  <themes>
+    <theme type="text" name=".LabelWhiteMedium"><![CDATA[ color: White; font-size: 12px; font-family: 'Arial'; text-align: left; vertical-align: top; font-weight: normal; font-style: none; text-decoration: none; display: table-cell;]]></theme>
+    <theme type="button" name=".btn[state='0']"><![CDATA[padding: 5px 13px 5px 12px; -webkit-border-image: url(btn_off.png) 5 13 5 12; text-shadow: rgba(0,0,0,0.78) 1px 1px 1px; color: White; font-size: 12px; font-family: 'Verdana'; font-weight: normal; font-style: none; text-decoration: none; text-align: center; vertical-align: middle; display: table-cell; box-sizing: border-box; -webkit-box-sizing: border-box; -webkit-tap-highlight-color:rgba(0,0,0,0);]]></theme>
+    <theme type="button" name=".btn[state='1']"><![CDATA[padding: 8px 13px 5px 12px; -webkit-border-image: url(btn_on.png) 8 13 5 12; color: White; font-size: 12px; font-family: 'Verdana'; font-weight: normal; font-style: none; text-decoration: none; text-align: center; vertical-align: middle; display: table-cell; box-sizing: border-box; -webkit-box-sizing: border-box; -webkit-tap-highlight-color:rgba(0,0,0,0);]]></theme>
+    <theme type="background" name=".BG"><![CDATA[background-color: #C0C0C0;]]></theme>
+    <theme type="input" name=".Input"><![CDATA[ background-color: White; border-width: 1px; color: Black; font-size: 12px; font-family: 'Arial'; text-align: left; vertical-align: top; font-weight: normal; font-style: none; text-decoration: none; display: table-cell;]]></theme>
+    <theme type="background" name=".portrait"><![CDATA[background-color: White; background-image: url(bg_portrait.png); background-repeat: no-repeat;]]></theme>
+    <theme type="gauge" name=".horizontal[state='0']"><![CDATA[ background-image: url(gauge_h_off.png);]]></theme>
+    <theme type="gauge" name=".horizontal[state='1']"><![CDATA[ background-image: url(gauge_h_on.png);]]></theme>
+    <theme type="gauge" name=".vertical[state='0']"><![CDATA[ background-image: url(gauge_v_off.png);]]></theme>
+    <theme type="gauge" name=".vertical[state='1']"><![CDATA[ background-image: url(gauge_v_on.png);]]></theme>
+    <theme type="text" name=".indicator"><![CDATA[ color: White; font-size: 12px; font-family: 'Verdana'; text-align: center; vertical-align: middle; font-weight: bold; font-style: none; text-decoration: none; display: table-cell;]]></theme>
+    <theme type="background" name=".landscape"><![CDATA[background-color: White; background-image: url(bg_landscape.png); background-repeat: no-repeat;]]></theme>
+    <theme type="text" name=".info_left"><![CDATA[ color: White; font-size: 14px; font-family: 'Verdana'; text-align: left; vertical-align: middle; font-weight: normal; font-style: none; text-decoration: none; display: table-cell;]]></theme>
+    <theme type="input" name=".transparent"><![CDATA[ border-width: 0px; color: Black; font-size: 14px; font-family: 'Verdana'; text-align: left; vertical-align: middle; font-weight: bold; font-style: none; text-decoration: none; display: table-cell;]]></theme>
+    <theme type="button" name=".submit[state='0']"><![CDATA[padding: 4px 12px 7px 12px; -webkit-border-image: url(btn_submit_off.png) 4 12 7 12; text-shadow: rgba(0,0,0,0.78) 1px 1px 1px; color: White; font-size: 16px; font-family: 'Verdana'; font-weight: normal; font-style: none; text-decoration: none; text-align: center; vertical-align: middle; display: table-cell; box-sizing: border-box; -webkit-box-sizing: border-box; -webkit-tap-highlight-color:rgba(0,0,0,0);]]></theme>
+    <theme type="button" name=".submit[state='1']"><![CDATA[padding: 7px 12px 7px 12px; -webkit-border-image: url(btn_submit_on.png) 7 12 7 12; color: White; font-size: 16px; font-family: 'Verdana'; font-weight: normal; font-style: none; text-decoration: none; text-align: center; vertical-align: middle; display: table-cell; box-sizing: border-box; -webkit-box-sizing: border-box; -webkit-tap-highlight-color:rgba(0,0,0,0);]]></theme>
+    <theme type="text" name=".title"><![CDATA[ color: #383838; font-size: 14px; font-family: 'Verdana'; text-align: center; vertical-align: middle; font-weight: bold; font-style: none; text-decoration: none; display: table-cell;]]></theme>
+    <theme type="text" name=".info_center"><![CDATA[ color: White; font-size: 14px; font-family: 'Verdana'; text-align: center; vertical-align: middle; font-weight: normal; font-style: none; text-decoration: none; display: table-cell;]]></theme>
+    <theme type="button" name=".btn_keypad[state='0']"><![CDATA[padding: 5px 13px 5px 12px; -webkit-border-image: url(btn_off.png) 5 13 5 12; text-shadow: rgba(0,0,0,0.78) 1px 1px 1px; color: White; font-size: 14px; font-family: 'Verdana'; font-weight: bold; font-style: none; text-decoration: none; text-align: center; vertical-align: middle; display: table-cell; box-sizing: border-box; -webkit-box-sizing: border-box; -webkit-tap-highlight-color:rgba(0,0,0,0);]]></theme>
+    <theme type="button" name=".btn_keypad[state='1']"><![CDATA[padding: 8px 13px 5px 12px; -webkit-border-image: url(btn_on.png) 8 13 5 12; color: White; font-size: 14px; font-family: 'Verdana'; font-weight: bold; font-style: none; text-decoration: none; text-align: center; vertical-align: middle; display: table-cell; box-sizing: border-box; -webkit-box-sizing: border-box; -webkit-tap-highlight-color:rgba(0,0,0,0);]]></theme>
+    <theme type="background" name=".landscape_blank"><![CDATA[background-color: #000000; background-image: url(bg_landscape_blank.png); background-repeat: no-repeat;]]></theme>
+  </themes>
+  <tokens>
+    <token name="CIP_System_Names" value="CIP1" persist="1" />
+    <token name="CIP1:Feedback_Name" value="CIP1_Incoming_Data" persist="1" />
+    <token name="CIP1:IP_ID" value="03" persist="1" />
+    <token name="CIP1:Online_Digital_Join" value="1000" persist="1" />
+    <token name="CIP1:Digital_Low" value="1" persist="1" />
+    <token name="CIP1:Digital_High" value="255" persist="1" />
+    <token name="CIP1:Analog_Low" value="1" persist="1" />
+    <token name="CIP1:Analog_High" value="255" persist="1" />
+    <token name="CIP1:Serial_Low" value="1" persist="1" />
+    <token name="CIP1:Serial_High" value="255" persist="1" />
+  </tokens>
+  <scripts>
+    <script name="CIPv1.0.js" />
+  </scripts>
+  <page name="Startup" j="305" transition="None" subtype="None" time="0" ease="" start="1">
+    <portrait />
+    <landscape t="BG">
+      <btn j="1" x="98" y="115" w="108" h="98" t="btn" flip="None" sim="0" l="0" s="1">
+        <inactive s="0">1</inactive>
+        <active s="0">1</active>
+      </btn>
+      <btn j="100" x="279" y="115" w="108" h="98" t="btn" flip="None" sim="0" l="0" s="1">
+        <inactive s="0">100</inactive>
+        <active s="0">100</active>
+      </btn>
+      <btn j="255" x="460" y="115" w="108" h="98" t="btn" flip="None" sim="0" l="0" s="1">
+        <inactive s="0">255</inactive>
+        <active s="0">255</active>
+      </btn>
+      <txt j="1" x="98" y="510" w="90" h="116" t="LabelWhiteMedium" wrap="False" l="0">s1</txt>
+      <txt j="100" x="280" y="510" w="90" h="116" t="LabelWhiteMedium" wrap="False" l="0">s100</txt>
+      <txt j="255" x="471" y="510" w="90" h="116" t="LabelWhiteMedium" wrap="False" l="0">s255</txt>
+      <slider j="1" d="0" x="143" y="294" w="19" h="149" min="0" max="65535" decimals="0" unit="decimal" t="vertical" sim="0" l="0" />
+      <slider j="100" d="0" x="326" y="294" w="19" h="149" min="0" max="65535" decimals="0" unit="decimal" t="vertical" sim="0" l="0" />
+      <slider j="255" d="0" x="508" y="294" w="19" h="149" min="0" max="65535" decimals="0" unit="decimal" t="vertical" sim="0" l="0" />
+      <input j="0" s="2" x="108" y="37" w="451" h="36" pass="0" autoFocus="0" f="0" t="Input" l="0">Text</input>
+      <btn j="1000" x="889" y="21" w="97" h="69" t="btn" flip="None" sim="0" l="0" s="0">
+        <inactive s="0">OFFLINE</inactive>
+        <active s="0">ONLINE</active>
+      </btn>
+    </landscape>
+  </page>
+</gui>
