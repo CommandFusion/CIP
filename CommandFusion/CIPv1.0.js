@@ -1,12 +1,14 @@
 /*	
-	CIP
 
-	Version:
-		1.0 - release
-			Supports standard XPanel features, with addition of serial transmit to control system.
-			Currently does not support Password protection, List protocol, and other custom messages such as Orientation.
-	Use:
-		Please visit http://www.github.com/CommandFusion/CIP for latest versions and help.
+CIP
+
+Version:
+	1.0 - release
+		Supports standard XPanel features, with addition of serial transmit to control system.
+		Currently does not support Password protection, List protocol, and other custom messages such as Orientation.
+Use:
+	Please visit http://www.github.com/CommandFusion/CIP for latest versions and help.
+
 */
 
 
