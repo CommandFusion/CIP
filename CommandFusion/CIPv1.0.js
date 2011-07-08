@@ -53,41 +53,41 @@ var CIP = function(params){
 	self.CIP_LogPrefix = 			["Success: ", "Notice: ", "Warning: ", "Error: "];
 
 	//Parameters
-	self.IPID =						params["IPID"] 							|| "03";
-	self.systemName =				params["systemName"] 					|| "Crestron";
-	self.systemFeedbackName =		params["systemFeedbackName"] 			|| "Incoming_Data";
+	self.IPID =				params["IPID"] 				|| "03";
+	self.systemName =			params["systemName"] 			|| "Crestron";
+	self.systemFeedbackName =		params["systemFeedbackName"] 		|| "Incoming_Data";
 	self.DJoin_connectedFB =		parseInt(params["DJoin_connectedFB"]) 	|| 5000;
-	self.DJoin_Low =				parseInt(params["DJoin_Low"]) 			|| 1;
-	self.DJoin_High =				parseInt(params["DJoin_High"]) 			|| 1000;
-	self.AJoin_Low =				parseInt(params["AJoin_Low"]) 			|| 1;
-	self.AJoin_High =				parseInt(params["AJoin_High"]) 			|| 500;
-	self.SJoin_Low =				parseInt(params["SJoin_Low"]) 			|| 1;
-	self.SJoin_High =				parseInt(params["SJoin_High"]) 			|| 500;
+	self.DJoin_Low =			parseInt(params["DJoin_Low"]) 		|| 1;
+	self.DJoin_High =			parseInt(params["DJoin_High"]) 		|| 1000;
+	self.AJoin_Low =			parseInt(params["AJoin_Low"]) 		|| 1;
+	self.AJoin_High =			parseInt(params["AJoin_High"]) 		|| 500;
+	self.SJoin_Low =			parseInt(params["SJoin_Low"]) 		|| 1;
+	self.SJoin_High =			parseInt(params["SJoin_High"]) 		|| 500;
 	
 	//Timers/debouncing
 	self.heartBeatRate =			5000;	//1000 = 1s
 	self.heartBeatTimer =			null;
-	self.updateRequestDebounce =	1000;
+	self.updateRequestDebounce =		1000;
 	self.updateRequestTimer =		null;
-	self.HoldJoins =				[];		//Array to hold joins that are being repeated
+	self.HoldJoins =			[];	//Array to hold joins that are being repeated
 	self.HoldRepeatTimer =			500;	//Repeat at least every .5 seconds or control system releases digital.
 		
 	//Data receive buffer
-	self.ourData = 					"";
+	self.ourData = 				"";
 	
 	//Arrays that represent our joins
-	self.DJoins =					[];
-	self.AJoins =					[];
-	self.SJoins =					[];
-	self.ClearJoins =				[];
+	self.DJoins =				[];
+	self.AJoins =				[];
+	self.SJoins =				[];
+	self.ClearJoins =			[];
 	
 	//Items related to pages
-	self.PageJoins =				[];
+	self.PageJoins =			[];
 	self.PageJoinByName =			[];
-	self.CurrentPage =				null;
+	self.CurrentPage =			null;
 	
 	//String Join values
-	self.SJValues =					[];
+	self.SJValues =				[];
 		
 	//Connection event handler
 	self.onConnectionChange = function (system, connected, remote) {
