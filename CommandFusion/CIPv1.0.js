@@ -378,7 +378,6 @@ var CIP = function(params){
 			if (self.SJValues[sJoin] == undefined) {self.SJValues[sJoin] = "";}
 			for (var i = 0; i < msg.length - 1; i++) {
 				text = msg[i].substr(joinLength + 2);
-				CF.log("[" + i + "]:\x09" + self.toHex(msg[i]));
 				if (i == 0) {
 					if(msg[i].charAt(0) === "#") {
 						if (text.length == 0) {
