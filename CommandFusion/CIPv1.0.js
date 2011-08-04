@@ -320,16 +320,12 @@ var CIP = function(params){
 	// DATA PROCESSING
 	// ---------------------------------------------------------
 	self.processIPIDStatus = function(len, payload) {
-		if (len == 3) {
+		if (payload == '\xff\xff\x02') {
 			// IP ID Does not Exist
-			if (payload == '\xff\xff\x02') {
-				self.ConnectState(3);
-			}
+			self.ConnectState(3);
 		} else if (len == 4) {
 			// IP ID registry Success
-			if (payload == '\x00\x00\x00\x03') {
-				self.ConnectState(1);
-			}
+			self.ConnectState(1);
 		} else {
 			//not accounted for
 			self.log(self.ourData,2,2);
