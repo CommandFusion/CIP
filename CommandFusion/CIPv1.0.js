@@ -153,29 +153,27 @@ var CIP = function(params){
 			case 0:
 				CF.setJoin("d" + self.DJoin_connectedFB, false);
 				self.log("Disconnected from IP ID: " + self.IPID,3,0);
-				self.clearJoins();
 				break;
 			case 1:
 				CF.setJoin("d" + self.DJoin_connectedFB, true);
 				self.log("Connected to IP ID: " + self.IPID,0,0);
 				self.heartBeatTimer = setTimeout(function(self){self.sendHeartBeat();},self.heartBeatRate, this);
+				self.updateRequestTimer = setTimeout(function(self){self.sendUpdateRequest();},self.updateRequestDebounce, this);
 				break;
 			case 2:
-				CF.setJoin("d" + self.DJoin_connectedFB, true);
-				self.log("Update Request Pending for IP ID: " + self.IPID,2,0);
-				self.heartBeatTimer = setTimeout(function(self){self.sendHeartBeat();},self.heartBeatRate, this);
-				self.updateRequestTimer = setTimeout(function(self){self.sendUpdateRequest();},self.updateRequestDebounce, this);
-				self.setPageJoin();
+				CF.setJoin("d" + self.DJoin_connectedFB, false);
+				self.log("IP ID Register Request, Sending: " + self.IPID,2,0);
+				self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40",0);
 				break;
 			case 3:
 				CF.setJoin("d" + self.DJoin_connectedFB, false);
-				clearTimeout(self.updateRequestTimer);	//kill any update requests during debounce, helps when processor is booting up and sending multiple UR codes
 				self.log("IP ID Not Defined on Processor: " + self.IPID + ". Retrying...",3,0);	 //When program isn't fully booted on processor, it will reject
 				self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40",0);
 				break;
 		}
 	};
-	
+
+
 	//Clear our join ranges on the UI
 	self.clearJoins = function () {
 		self.log("Clearing Joins...",1,0);
@@ -396,6 +394,7 @@ var CIP = function(params){
 			CF.setJoin(sJoin,self.SJValues[sJoin]);
 
 		} else if (dataType == 0x03) {
+			self.clearJoins();
 			//update request confirmation, we receive this just before processor sends the UR data.
 		} else if (dataType == 0x08) {	//Date & Time - Only sent during update request, so driving a join would require a clock.  Just for reference, for now.
 			var hour = payload.charCodeAt(5).toString(16);
@@ -444,6 +443,7 @@ var CIP = function(params){
 	CF.watch(CF.ConnectionStatusChangeEvent, self.systemName, self.onConnectionChange, true);
 	CF.watch(CF.FeedbackMatchedEvent, self.systemName, self.systemFeedbackName, self.receive);
 	CF.getGuiDescription(self.processGui);
+	//CF.watch(CF.GUIResumedEvent, self.onGUIResumed);
 
 	self.log(	"\r\x09" + "CIP Ready for System: " + self.systemName + "\r" +
 				"\x09" + "Module Version: " + self.versionMajor + "." + self.versionMinor + "\r" +
