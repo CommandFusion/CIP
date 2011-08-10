@@ -93,8 +93,8 @@ var CIP = function(params){
 		
 	//Connection event handler
 	self.onConnectionChange = function (system, connected, remote) {
-		if (connected != false) {
-			self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40",0);	 //Send IP ID connect request
+		if (connected !== false) {
+			self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode(self.IPID) + "\x40",0);	 //Send IP ID connect request
 		} else {
 			self.ConnectState(0);
 		}
@@ -163,12 +163,14 @@ var CIP = function(params){
 			case 2:
 				CF.setJoin("d" + self.DJoin_connectedFB, false);
 				self.log("IP ID Register Request, Sending: " + self.IPID,2,0);
-				self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40",0);
+				self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode(self.IPID) + "\x40",0);
 				break;
 			case 3:
 				CF.setJoin("d" + self.DJoin_connectedFB, false);
 				self.log("IP ID Not Defined on Processor: " + self.IPID + ". Retrying...",3,0);	 //When program isn't fully booted on processor, it will reject
-				self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40",0);
+				self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode(self.IPID) + "\x40",0);
+				break;
+			default:
 				break;
 		}
 	};
