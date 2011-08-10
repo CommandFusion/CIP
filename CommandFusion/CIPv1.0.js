@@ -58,18 +58,18 @@ var CIP = function(params){
 	self.IPID =				params["IPID"] 				|| "03";
 	self.systemName =			params["systemName"] 			|| "Crestron";
 	self.systemFeedbackName =		params["systemFeedbackName"] 		|| "Incoming_Data";
-	self.DJoin_connectedFB =		parseInt(params["DJoin_connectedFB"]) 	|| 5000;
-	self.DJoin_Low =			parseInt(params["DJoin_Low"]) 		|| 1;
-	self.DJoin_High =			parseInt(params["DJoin_High"]) 		|| 1000;
-	self.AJoin_Low =			parseInt(params["AJoin_Low"]) 		|| 1;
-	self.AJoin_High =			parseInt(params["AJoin_High"]) 		|| 500;
-	self.SJoin_Low =			parseInt(params["SJoin_Low"]) 		|| 1;
-	self.SJoin_High =			parseInt(params["SJoin_High"]) 		|| 500;
+	self.DJoin_connectedFB =	parseInt(params["DJoin_connectedFB"],10) 	|| 5000;
+	self.DJoin_Low =			parseInt(params["DJoin_Low"],10) 	|| 1;
+	self.DJoin_High =			parseInt(params["DJoin_High"],10)	|| 1000;
+	self.AJoin_Low =			parseInt(params["AJoin_Low"],10) 	|| 1;
+	self.AJoin_High =			parseInt(params["AJoin_High"],10)	|| 500;
+	self.SJoin_Low =			parseInt(params["SJoin_Low"],10) 	|| 1;
+	self.SJoin_High =			parseInt(params["SJoin_High"],10)	|| 500;
 	
 	//Timers/debouncing
 	self.heartBeatRate =			5000;	//1000 = 1s
 	self.heartBeatTimer =			null;
-	self.updateRequestDebounce =		1000;
+	self.updateRequestDebounce =	1000;
 	self.updateRequestTimer =		null;
 	self.HoldJoins =			[];	//Array to hold joins that are being repeated
 	self.HoldRepeatTimer =			500;	//Repeat at least every .5 seconds or control system releases digital.
@@ -185,21 +185,22 @@ var CIP = function(params){
 	
 	//Process gui elements to setup watch, clearing, and other functions
 	self.processGui = function (gui) {
-		
 		//Setup join arrays of pages & joins
-		for (var i=0, numPages=gui.pages.length; i < numPages; i++) {
-			var joinVal = parseInt(gui.pages[i].join.substr(1))
+		var i;
+		for (i=0, numPages=gui.pages.length; i < numPages; i++) {
+			var page = gui.pages[i];
+			var joinVal = parseInt(page.join.substr(1),10);
 			if (self.DJoin_Low <= joinVal && joinVal <= self.DJoin_High) {
-				self.PageJoins[gui.pages[i].join] = true;
-				self.PageJoinByName[gui.pages[i].name] = joinVal;
+				self.PageJoins[page.join] = true;
+				self.PageJoinByName[page.name] = joinVal;
 			}
 		}
 		
 		//Setup join arrays for used joins monitoring and clearing
-		for (var i=0, numJoins=gui.allJoins.length; i < numJoins; i++) {
+		for (i=0, numJoins=gui.allJoins.length; i < numJoins; i++) {
 		    var theJoin = gui.allJoins[i];
 		    var type = theJoin.charAt(0);
-		    var num = parseInt(theJoin.substr(1));
+		    var num = parseInt(theJoin.substr(1),10);
 		    if (type === "d" && num >= self.DJoin_Low && num <= self.DJoin_High && num != self.DJoin_connectedFB && !self.PageJoins[theJoin]) {
 		        //digital
 		        self.DJoins.push(theJoin);
@@ -235,69 +236,47 @@ var CIP = function(params){
 	
 	//Method to send page join feedback, clearing all other page joins
 	self.setPageJoin = function () {
-		//clear 
+		//clear
+		var rawJoin;
 		for (var i in self.PageJoinByName) {
-			var rawJoin = self.PageJoinByName[i] - 1;
-			var upperByte = String.fromCharCode(rawJoin & 0xff);
-			var lowerByte = String.fromCharCode((rawJoin >> 8) | 0x0080);
-			self.sendMsg("\x05\x00\x06\x00\x00\x03\x00"+ upperByte + lowerByte, 0);
+			rawJoin = self.PageJoinByName[i] - 1;
+			self.sendMsg("\x05\x00\x06\x00\x00\x03\x00" + String.fromCharCode(rawJoin & 0xff, (rawJoin >> 8) | 0x0080), 0);
 		}
 
 		//set join if page has join
-		if (self.PageJoinByName[self.CurrentPage] != undefined) {
-			var rawJoin = self.PageJoinByName[self.CurrentPage] - 1;
-			var upperByte = String.fromCharCode(rawJoin & 0xff);
-			var lowerByte = String.fromCharCode(rawJoin >> 8);
-			self.sendMsg("\x05\x00\x06\x00\x00\x03\x00"+ upperByte + lowerByte, 0);
+		if (self.PageJoinByName[self.CurrentPage] !== undefined) {
+			rawJoin = self.PageJoinByName[self.CurrentPage] - 1;
+			self.sendMsg("\x05\x00\x06\x00\x00\x03\x00" + String.fromCharCode(rawJoin & 0xff, rawJoin >> 8), 0);
 		}
-	}
+	};
 	
 	self.userDigitalPush = function (join, value, tokens) {
-		var type = join.charCodeAt(0);
-		var rawJoin = parseInt(join.substr(1)) - 1;
-		var rawValue = parseInt(value);
-		var upperByte, lowerByte;
-		
-		upperByte = String.fromCharCode(rawJoin & 0xff);
-		lowerByte = String.fromCharCode(rawJoin >> 8);
-		var msg = "\x05\x00\x06\x00\x00\x03\x27"+ upperByte + lowerByte;
+		var rawJoin = parseInt(join.substr(1),10) - 1;
+		var msg = "\x05\x00\x06\x00\x00\x03\x27" + String.fromCharCode(rawJoin & 0xff, rawJoin >> 8); 
 		self.sendMsg(msg,0);
 		self.HoldJoins[join] = setInterval(function(){self.sendMsg(msg,0);}, self.HoldRepeatTimer);	 //repeat the held join command
 	};
 	
 	self.userDigitalRelease = function (join, value, tokens) {
-		var type = join.charCodeAt(0);
-		var rawJoin = parseInt(join.substr(1)) - 1;
-		var upperByte, lowerByte;
-		
-		upperByte = String.fromCharCode(rawJoin & 0xff);
+		var rawJoin = parseInt(join.substr(1),10) - 1;
 		clearInterval(self.HoldJoins[join]);
-		lowerByte = String.fromCharCode((rawJoin >> 8) | 0x0080);
-		self.sendMsg("\x05\x00\x06\x00\x00\x03\x27"+ upperByte + lowerByte,0);
-		clearInterval(self.HoldJoins[join]);
+		delete self.HoldJoins[join];
+		self.sendMsg("\x05\x00\x06\x00\x00\x03\x27"+ String.fromCharCode(rawJoin & 0xff, (rawJoin >> 8) | 0x0080), 0);
 	};
 	
 	self.userAnalogEvent = function (join, value, tokens) {
-		var type = join.charCodeAt(0);
-		var rawJoin = parseInt(join.substr(1)) - 1;
-		var rawValue = parseInt(value);
-		var joinUpper, joinLower, valUpper, valLower;
-		
-		joinUpper = String.fromCharCode(rawJoin >> 8);
-		joinLower = String.fromCharCode(rawJoin & 0xff);
-		valUpper = String.fromCharCode(rawValue >> 8);
-		valLower = String.fromCharCode(rawValue & 0xff);
-		self.sendMsg("\x05\x00\x08\x00\x00\x05\x14"+ joinUpper + joinLower + valUpper + valLower,0);
+		var rawJoin = parseInt(join.substr(1),10) - 1;
+		var rawValue = parseInt(value,10);
+		self.sendMsg("\x05\x00\x08\x00\x00\x05\x14"+ String.fromCharCode(rawJoin >> 8, rawJoin & 0xff, rawValue >> 8, rawValue & 0xff), 0);
 	};
-	
-	self.userSerialEvent = function (join, value, tokens) {
-		var type = join.charCodeAt(0);
-		var rawJoin = parseInt(join.substr(1)) - 1;
-		var rawValue = parseInt(value);
-		self.SJValues[join] = value;
 
-		var payload = "\x00\x00" + String.fromCharCode(value.length + 2) + "\x12" + String.fromCharCode(rawJoin) + value;
-		self.sendMsg("\x05\x00" + String.fromCharCode(payload.length) + payload,0);
+	self.userSerialEvent = function (join, value, tokens) {
+		var rawJoin = parseInt(join.substr(1),10) - 1;
+		var rawValue = parseInt(value,10);
+		self.SJValues[join] = value;
+		// @@@ warning: if value.length > 250, bad things WILL ensue
+		var payload = String.fromCharCode(0x00, 0x00, value.length+2, 0x12, rawJoin) + value;
+		self.sendMsg("\x05\x00" + String.fromCharCode(payload.length) + payload, 0);
 	};
 	
 	//TCP receive event handler. Will process all packets even if multiple messages received for single data event
@@ -314,7 +293,7 @@ var CIP = function(params){
 			self.dataChange(type, len, payload);	// process payload
 		}
 		self.ourData = s;
-	}
+	};
 	
 	// ---------------------------------------------------------
 	// DATA PROCESSING
@@ -334,7 +313,7 @@ var CIP = function(params){
 
 	self.processData = function(len, payload) {
 		var dataType = payload.charCodeAt(3);
-		if (dataType == 0x00) {
+		if (dataType === 0x00) {
 			// digital feedback
 			var joinData = (payload.charCodeAt(4) << 8) + payload.charCodeAt(5);
 			var join = ((joinData >> 8) | ((joinData & 0x7F) << 8)) + 1;
@@ -343,13 +322,13 @@ var CIP = function(params){
 			} else {
 				self.log("Ignoring out of range Digital: " + join,2,0);
 			}
-		} else if (dataType == 0x01) {
+		} else if (dataType === 0x01) {
 			// analog feedback
 			var join = 0, value = 0, type = payload.charCodeAt(2);
-			if (type == 4) { // Join < 256
+			if (type === 4) { // Join < 256
 				join = payload.charCodeAt(4) + 1;
 				value = (payload.charCodeAt(5) << 8) + payload.charCodeAt(6);
-			} else if (type == 5) {	// Join > 255
+			} else if (type === 5) {	// Join > 255
 				join = (payload.charCodeAt(4) << 8) + payload.charCodeAt(5) + 1;
 				value = (payload.charCodeAt(6) << 8) + payload.charCodeAt(7);
 			}
@@ -358,12 +337,11 @@ var CIP = function(params){
 			} else {
 				self.log("Ignoring out of range Analog: " + join,2,0);
 			}
-		} else if (dataType == 0x02) {
+		} else if (dataType === 0x02) {
 			// serial feedback
-			var package = payload.substr(4);
-			var msg = package.split("\r");
+			var msg = payload.substr(4).split("\r");
 			var joinLength = msg[0].indexOf(",") - 1;
-			var join = parseInt(msg[0].substring(1,joinLength + 1));
+			var join = parseInt(msg[0].substring(1,joinLength + 1),10);
 			var sJoin = "s" + join;
 			var text = "";
 
@@ -371,12 +349,14 @@ var CIP = function(params){
 				self.log("Ignoring out of range Serial: " + join,2,0);
 				return;
 			}
-			if (self.SJValues[sJoin] == undefined) {self.SJValues[sJoin] = "";}
+			if (self.SJValues[sJoin] === undefined) {
+				self.SJValues[sJoin] = "";
+			}
 			for (var i = 0; i < msg.length - 1; i++) {
 				text = msg[i].substr(joinLength + 2);
-				if (i == 0) {
+				if (i === 0) {
 					if(msg[i].charAt(0) === "#") {
-						if (text.length == 0) {
+						if (text.length === 0) {
 							self.SJValues[sJoin] = text;
 						} else if (text.length > 0) {
 							self.SJValues[sJoin] = self.SJValues[sJoin] + "\r" + text;
@@ -385,7 +365,7 @@ var CIP = function(params){
 						self.SJValues[sJoin] = self.SJValues[sJoin] + text;
 					}
 				} else if (i > 0) {
-					if (text.length == 0 && !(i == (msg.length-1) && self.SJValues[sJoin].length == 0)) {
+					if (text.length === 0 && !(i === (msg.length-1) && self.SJValues[sJoin].length === 0)) {
 						self.SJValues[sJoin] = self.SJValues[sJoin] + "\r";
 					} else if (text.length > 0) {
 						self.SJValues[sJoin] = self.SJValues[sJoin] + text;
@@ -395,10 +375,10 @@ var CIP = function(params){
 
 			CF.setJoin(sJoin,self.SJValues[sJoin]);
 
-		} else if (dataType == 0x03) {
+		} else if (dataType === 0x03) {
 			self.clearJoins();
 			//update request confirmation, we receive this just before processor sends the UR data.
-		} else if (dataType == 0x08) {	//Date & Time - Only sent during update request, so driving a join would require a clock.  Just for reference, for now.
+		} else if (dataType === 0x08) {	//Date & Time - Only sent during update request, so driving a join would require a clock.  Just for reference, for now.
 			var hour = payload.charCodeAt(5).toString(16);
 			var minute = payload.charCodeAt(6).toString(16);
 			var second = payload.charCodeAt(7).toString(16);
