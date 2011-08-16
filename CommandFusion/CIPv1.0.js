@@ -358,8 +358,8 @@ var CIP = function(params){
 			}
 		} else if (dataType == 0x02) {
 			// serial feedback
-			var package = payload.substr(4);
-			var msg = package.split("\r");
+			var pkg = payload.substr(4);
+			var msg = pkg.split("\r");
 			var joinLength = msg[0].indexOf(",") - 1;
 			var join = parseInt(msg[0].substring(1,joinLength + 1));
 			var sJoin = "s" + join;
