@@ -35,7 +35,6 @@ CF.userMain = function() {
 			});
 		}
 	});
-	delete CF.userMain;
 };
 
 
@@ -84,11 +83,11 @@ var CIP = function(params){
 	
 	//String Join values
 	self.SJValues =					[];
-		
+
 	//Connection event handler
 	self.onConnectionChange = function (system, connected, remote) {
 		if (connected != false) {
-			self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40",0);	 //Send IP ID connect request
+			self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40");	 //Send IP ID connect request
 		} else {
 			self.ConnectState(0);
 		}
@@ -111,12 +110,13 @@ var CIP = function(params){
 	};
 
 	self.sendMsg = function(msg) {
-		CF.send(msg)
-		self.log(self.toHex(msg))
+		CF.send(self.systemName, msg, CF.BINARY)
+		self.log("sending:" + self.toHex(msg))
 	};
 	
 		//TCP receive event handler. Will process all packets even if multiple messages received for single data event
 	self.receive = function (itemName, data) {
+		self.log(self.toHex(data))
 		self.ourData += data;
 		while (self.ourData.length >= 3) {
 			var type = self.ourData.charCodeAt(0);
@@ -132,11 +132,9 @@ var CIP = function(params){
 	
 	//parse a single incoming message from remote system
 	self.processMessage = function (type, len, payload) {	
-		if (type == 0x05) {
-			// data
+		if (type == 0x05) {	// data
 			var dataType = payload.charCodeAt(3);
-			if (dataType == 0x00) {
-				// digital feedback
+			if (dataType == 0x00) {	// digital feedback
 				var joinData = (payload.charCodeAt(4) << 8) + payload.charCodeAt(5);
 				var join = ((joinData >> 8) | ((joinData & 0x7F) << 8)) + 1;
 				if (self.DJoin_Low <= join && join <= self.DJoin_High && join != self.DJoin_connectedFB) {
@@ -144,8 +142,7 @@ var CIP = function(params){
 				} else {
 					self.log("Ignoring out of range Digital: " + join);
 				}
-			} else if (dataType == 0x01) {
-				// analog feedback
+			} else if (dataType == 0x01) {	// analog feedback
 				var join = 0, value = 0, type = payload.charCodeAt(2);
 				if (type == 4) { // Join < 256
 					join = payload.charCodeAt(4) + 1;
@@ -159,15 +156,13 @@ var CIP = function(params){
 				} else {
 					self.log("Ignoring out of range Analog: " + join);
 				}
-			} else if (dataType == 0x02) {
-				// serial feedback
+			} else if (dataType == 0x02) {	// serial feedback
 				var pkg = payload.substr(4);
 				var msg = pkg.split("\r");
 				var joinLength = msg[0].indexOf(",") - 1;
 				var join = parseInt(msg[0].substring(1,joinLength + 1));
 				var sJoin = "s" + join;
 				var text = "";
-	
 				if (self.SJoin_Low > join || join > self.SJoin_High) {
 					self.log("Ignoring out of range Serial: " + join);
 					return;
@@ -193,12 +188,9 @@ var CIP = function(params){
 						}
 					}
 				}
-				CF.setJoin(sJoin,self.SJValues[sJoin]);
+				CF.setJoin(sJoin,self.SJValues[sJoin], false);
 			} else if (dataType == 0x03) {
-				//update request confirmation, we receive this just before processor sends the UR data, so set values to default
-				self.log("Clearing Joins...");
-				CF.setJoins(self.ClearJoins, false);
-				self.log("Done Clearing Joins");
+				//update request confirmation, we receive this just before processor sends the UR data
 			} else if (dataType == 0x08) {
 				//Date & Time - Only sent during update request, so driving a join would require a clock.  Just for reference, for now.
 			} else {
@@ -210,12 +202,14 @@ var CIP = function(params){
 				// IP ID Does not Exist, or booting, retry...
 				self.ConnectState(0)
 				self.log("IP ID Not Defined on Processor: " + self.IPID + ". Retrying...");	 //When program isn't fully booted on processor, it will reject
-				self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40",0);
+				self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40");
 			} else if (len == 4) {
 				// IP ID registry Success
 				self.log("IP ID Registry Success")
-				self.sendMsg("\x05\x00\x05\x00\x00\x02\x03\00",0); //Send update request
-				self.heartBeatTimer = setTimeout(function(self){self.send("\x0d\x00\x02\x00\x00");}, self.heartBeatRate, this);
+				self.sendMsg("\x05\x00\x05\x00\x00\x02\x03\00"); //Send update request
+				clearInterval(self.heartBeatTimer);
+				self.heartBeatTimer = setInterval(function(){self.sendHeartBeat();}, self.heartBeatRate);	 //repeat the held join command
+				//self.heartBeatTimer = setTimeout(function(self){self.sendHeartBeat();}, self.heartBeatRate, this);
 				self.ConnectState(1);
 			} else {
 				//not accounted for
@@ -226,14 +220,15 @@ var CIP = function(params){
 		} else if (type == 0x0D || type == 0x0E) {
 			// 0x0D heartbeat timeout - Processor sends an initiator heartbeat if it doesn't receive one and times out
 			// 0x0E heartbeat response - Response to our initiator heartbeat.
-			self.heartBeatTimer = setTimeout(function(self){self.send("\x0d\x00\x02\x00\x00");}, self.heartBeatRate, this);
+			clearInterval(self.heartBeatTimer);
+			self.heartBeatTimer = setInterval(function(){self.sendHeartBeat();}, self.heartBeatRate);	 //repeat the held join command
 		} else if (type == 0x0F) {
 			// processor response
 			if (len == 1) {
 				if (payload == '\x02') {	//IP ID Register request, send IPID
 					self.ConnectState(0);
 					self.log("IP ID Register Request, Sending: " + self.IPID);
-					self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40",0);
+					self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40");
 				}
 			} else {
 				self.log(payload);
@@ -249,14 +244,22 @@ var CIP = function(params){
 			case 0:
 				CF.setJoin("d" + self.DJoin_connectedFB, false);
 				self.log("Disconnected from IP ID: " + self.IPID);
+				self.log("Clearing Joins...");
+				CF.setJoins(self.ClearJoins, false);
+				self.log("Done Clearing Joins");
 				break;
 			case 1:
 				CF.setJoin("d" + self.DJoin_connectedFB, true);
 				self.log("Connected to IP ID: " + self.IPID);
+				//Watch pageflips
+				CF.watch(CF.PageFlipEvent, self.pageFlipEvent, true);
 				break;
 		}
 	};
 
+	self.sendHeartBeat = function(){
+		self.sendMsg("\x0d\x00\x02\x00\x00")
+	}
 
 	//Process gui elements to setup watch, clearing, and other functions
 	self.processGui = function (gui) {
@@ -290,9 +293,6 @@ var CIP = function(params){
 		    }
 		}
 		
-		//Watch pageflips
-		CF.watch(CF.PageFlipEvent, self.pageFlipEvent, true);
-		
 		//Watch joins
 		CF.watch(CF.ObjectPressedEvent, self.DJoins, self.userDigitalPush);
 		CF.watch(CF.ObjectReleasedEvent, self.DJoins, self.userDigitalRelease);
@@ -310,7 +310,7 @@ var CIP = function(params){
 			var rawJoin = self.PageJoinByName[i] - 1;
 			var upperByte = String.fromCharCode(rawJoin & 0xff);
 			var lowerByte = String.fromCharCode((rawJoin >> 8) | 0x0080);
-			self.sendMsg("\x05\x00\x06\x00\x00\x03\x00"+ upperByte + lowerByte, 0);
+			self.sendMsg("\x05\x00\x06\x00\x00\x03\x00"+ upperByte + lowerByte);
 		}
 
 		//set join if page has join
@@ -318,7 +318,7 @@ var CIP = function(params){
 			var rawJoin = self.PageJoinByName[self.CurrentPage] - 1;
 			var upperByte = String.fromCharCode(rawJoin & 0xff);
 			var lowerByte = String.fromCharCode(rawJoin >> 8);
-			self.sendMsg("\x05\x00\x06\x00\x00\x03\x00"+ upperByte + lowerByte, 0);
+			self.sendMsg("\x05\x00\x06\x00\x00\x03\x00"+ upperByte + lowerByte);
 		}
 	};
 
@@ -332,8 +332,8 @@ var CIP = function(params){
 		upperByte = String.fromCharCode(rawJoin & 0xff);
 		lowerByte = String.fromCharCode(rawJoin >> 8);
 		var msg = "\x05\x00\x06\x00\x00\x03\x27"+ upperByte + lowerByte;
-		self.sendMsg(msg,0);
-		self.HoldJoins[join] = setInterval(function(){self.sendMsg(msg,0);}, self.HoldRepeatTimer);	 //repeat the held join command
+		self.sendMsg(msg);
+		self.HoldJoins[join] = setInterval(function(){self.sendMsg(msg);}, self.HoldRepeatTimer);	 //repeat the held join command
 	};
 	
 	self.userDigitalRelease = function (join, value, tokens) {
@@ -344,7 +344,7 @@ var CIP = function(params){
 		upperByte = String.fromCharCode(rawJoin & 0xff);
 		clearInterval(self.HoldJoins[join]);
 		lowerByte = String.fromCharCode((rawJoin >> 8) | 0x0080);
-		self.sendMsg("\x05\x00\x06\x00\x00\x03\x27"+ upperByte + lowerByte,0);
+		self.sendMsg("\x05\x00\x06\x00\x00\x03\x27"+ upperByte + lowerByte);
 		clearInterval(self.HoldJoins[join]);
 	};
 	
@@ -358,7 +358,7 @@ var CIP = function(params){
 		joinLower = String.fromCharCode(rawJoin & 0xff);
 		valUpper = String.fromCharCode(rawValue >> 8);
 		valLower = String.fromCharCode(rawValue & 0xff);
-		self.sendMsg("\x05\x00\x08\x00\x00\x05\x14"+ joinUpper + joinLower + valUpper + valLower,0);
+		self.sendMsg("\x05\x00\x08\x00\x00\x05\x14"+ joinUpper + joinLower + valUpper + valLower);
 	};
 	
 	self.userSerialEvent = function (join, value, tokens) {
@@ -368,7 +368,7 @@ var CIP = function(params){
 		self.SJValues[join] = value;
 
 		var payload = "\x00\x00" + String.fromCharCode(value.length + 2) + "\x12" + String.fromCharCode(rawJoin) + value;
-		self.sendMsg("\x05\x00" + String.fromCharCode(payload.length) + payload,0);
+		self.sendMsg("\x05\x00" + String.fromCharCode(payload.length) + payload);
 	};
 	
 	//Initialization: General setup & Event monitors
@@ -378,7 +378,7 @@ var CIP = function(params){
 	//CF.watch(CF.GUIResumedEvent, self.onGUIResumed);
 
 	self.log(	"\r\x09" + "CIP Ready for System: " + self.systemName + "\r" +
-				"\x09" + "Module Version: " + self.versionMajor + "." + self.versionMinor + "\r" +
+				"\x09" + "Module Version: " + self.version + "\r" +
 				"\x09" + "IP ID: " + self.IPID + "\r" +
 				"\x09" + "Online Feedback Join: " + self.DJoin_connectedFB + "\r" +
 				"\x09" + "Digital Range: " + self.DJoin_Low + "-" + self.DJoin_High + "\r" +
