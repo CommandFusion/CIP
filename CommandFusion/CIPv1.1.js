@@ -3,7 +3,7 @@
 CIP
 
 Version:
-	1.1 - Cleanup, fix issue connectivity issue
+	1.1 - Cleanup, fix connectivity issues, and serial echo issue
 	1.0 - release
 		Supports standard XPanel features, with addition of serial transmit to control system.
 		Currently does not support Password protection, List protocol, and other custom messages such as Orientation.
@@ -36,8 +36,6 @@ CF.userMain = function() {
 		}
 	});
 };
-
-
 
 
 //CIP object
@@ -111,12 +109,10 @@ var CIP = function(params){
 
 	self.sendMsg = function(msg) {
 		CF.send(self.systemName, msg, CF.BINARY)
-		self.log("sending:" + self.toHex(msg))
 	};
 	
 		//TCP receive event handler. Will process all packets even if multiple messages received for single data event
 	self.receive = function (itemName, data) {
-		self.log(self.toHex(data))
 		self.ourData += data;
 		while (self.ourData.length >= 3) {
 			var type = self.ourData.charCodeAt(0);
@@ -208,8 +204,7 @@ var CIP = function(params){
 				self.log("IP ID Registry Success")
 				self.sendMsg("\x05\x00\x05\x00\x00\x02\x03\00"); //Send update request
 				clearInterval(self.heartBeatTimer);
-				self.heartBeatTimer = setInterval(function(){self.sendHeartBeat();}, self.heartBeatRate);	 //repeat the held join command
-				//self.heartBeatTimer = setTimeout(function(self){self.sendHeartBeat();}, self.heartBeatRate, this);
+				self.heartBeatTimer = setInterval(function(){self.sendHeartBeat();}, self.heartBeatRate);
 				self.ConnectState(1);
 			} else {
 				//not accounted for
@@ -221,7 +216,7 @@ var CIP = function(params){
 			// 0x0D heartbeat timeout - Processor sends an initiator heartbeat if it doesn't receive one and times out
 			// 0x0E heartbeat response - Response to our initiator heartbeat.
 			clearInterval(self.heartBeatTimer);
-			self.heartBeatTimer = setInterval(function(){self.sendHeartBeat();}, self.heartBeatRate);	 //repeat the held join command
+			self.heartBeatTimer = setInterval(function(){self.sendHeartBeat();}, self.heartBeatRate);
 		} else if (type == 0x0F) {
 			// processor response
 			if (len == 1) {
