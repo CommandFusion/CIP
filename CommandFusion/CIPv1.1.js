@@ -85,8 +85,12 @@ var CIP = function(params){
 	//Connection event handler
 	self.onConnectionChange = function (system, connected, remote) {
 		if (connected != false) {
+			self.connected = true;
 			self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40");	 //Send IP ID connect request
+			self.log("Socket Connected");
 		} else {
+			self.connected = false;
+			self.log("Socket Disconnected");
 			self.ConnectState(0);
 		}
 	};
@@ -108,11 +112,13 @@ var CIP = function(params){
 	};
 
 	self.sendMsg = function(msg) {
+		self.log(msg)
 		CF.send(self.systemName, msg, CF.BINARY)
 	};
 	
-		//TCP receive event handler. Will process all packets even if multiple messages received for single data event
+	//TCP receive event handler. Will process all packets even if multiple messages received for single data event
 	self.receive = function (itemName, data) {
+		self.log(data)
 		self.ourData += data;
 		while (self.ourData.length >= 3) {
 			var type = self.ourData.charCodeAt(0);
@@ -366,11 +372,16 @@ var CIP = function(params){
 		self.sendMsg("\x05\x00" + String.fromCharCode(payload.length) + payload);
 	};
 	
+	self.onGUIResumed = function() {
+		self.log("Gui Resumed...")
+		self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40");	 //Send IP ID connect request
+	};
+	
 	//Initialization: General setup & Event monitors
 	CF.watch(CF.ConnectionStatusChangeEvent, self.systemName, self.onConnectionChange, true);
 	CF.watch(CF.FeedbackMatchedEvent, self.systemName, self.systemFeedbackName, self.receive);
 	CF.getGuiDescription(self.processGui);
-	//CF.watch(CF.GUIResumedEvent, self.onGUIResumed);
+	CF.watch(CF.GUIResumedEvent, self.onGUIResumed);
 
 	self.log(	"\r\x09" + "CIP Ready for System: " + self.systemName + "\r" +
 				"\x09" + "Module Version: " + self.version + "\r" +
