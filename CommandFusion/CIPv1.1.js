@@ -66,6 +66,10 @@ var CIP = function(params){
 	self.HoldRepeatRate =			500;	//Repeat at least every .5 seconds or control system releases digital.
 	self.ConnectRepeatTimer =		null;
 	self.ConnectRepeatRate =		500;
+	self.updateRequestTimer =		null
+	self.updateRequestDelay =		1000;
+	self.monitorPageFlipTimer =		null;
+	self.monitorPageFlipDelay =		3000;
 		
 	//Data receive buffer
 	self.ourData = 					"";
@@ -112,13 +116,13 @@ var CIP = function(params){
 	};
 
 	self.sendMsg = function(msg) {
-		//self.log("Sending: " + self.toHex(msg));
+		self.log("Sending: " + self.toHex(msg));
 		CF.send(self.systemName, msg, CF.BINARY);
 	};
 	
 	//TCP receive event handler. Will process all packets even if multiple messages received for single data event
 	self.receive = function (itemName, data) {
-		//self.log("Receiving: " + self.toHex(data));
+		self.log("Receiving: " + self.toHex(data));
 		self.ourData += data;
 		while (self.ourData.length >= 3) {
 			var type = self.ourData.charCodeAt(0);
@@ -209,7 +213,6 @@ var CIP = function(params){
 			} else if (len == 4) {
 				// IP ID registry Success
 				self.log("IP ID Registry Success")
-				self.sendMsg("\x05\x00\x05\x00\x00\x02\x03\00"); //Send update request
 				clearInterval(self.heartBeatTimer);
 				self.heartBeatTimer = setInterval(function(){self.sendHeartBeat();}, self.heartBeatRate);
 				self.ConnectState(1);
@@ -257,15 +260,31 @@ var CIP = function(params){
 				clearInterval(self.ConnectRepeatTimer);
 				CF.setJoin("d" + self.DJoin_connectedFB, true);
 				self.log("Connected to IP ID: " + self.IPID);
-				CF.watch(CF.PageFlipEvent, self.pageFlipEvent, true);	//Watch pageflips
+				self.updateRequestTimer = setTimeout(function(){self.sendUpdateRequest();}, self.updateRequestDelay);	//Update Request Delay
+				self.monitorPageFlipTimer = setTimeout(function(){self.monitorPageflips();}, self.monitorPageFlipDelay)
 				break;
 		}
 	};
 
 	self.sendHeartBeat = function(){
 		self.sendMsg("\x0d\x00\x02\x00\x00")
-	}
-
+	};
+	
+	self.connectRepeat = function() {
+		self.log("Repeat Interval.")
+		self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40");
+	};
+	
+	self.sendUpdateRequest = function() {
+		clearTimeout(self.updateRequestTimer);
+		self.sendMsg("\x05\x00\x05\x00\x00\x02\x03\00"); //Send update request
+	};
+	
+	self.monitorPageflips = function() {
+		clearTimeout(self.monitorPageFlipTimer)
+		CF.watch(CF.PageFlipEvent, self.pageFlipEvent, true);	//Watch pageflips
+	};
+	
 	//Process gui elements to setup watch, clearing, and other functions
 	self.processGui = function (gui) {
 		//Setup join arrays of pages & joins
@@ -381,11 +400,7 @@ var CIP = function(params){
 		self.ConnectState(0);
 		//self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40");	 //Send IP ID connect request
 	};
-	
-	self.connectRepeat = function() {
-		self.log("Repeat Interval.")
-		self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40");
-	};
+
 	
 	//Initialization: General setup & Event monitors
 	CF.watch(CF.ConnectionStatusChangeEvent, self.systemName, self.onConnectionChange, true);
