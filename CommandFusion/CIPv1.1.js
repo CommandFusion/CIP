@@ -60,10 +60,12 @@ var CIP = function(params){
 	self.SJoin_High =				parseInt(params["SJoin_High"]) 			|| 500;
 	
 	//Timers/debouncing
-	self.heartBeatRate =			5000;	//1000 = 1s
 	self.heartBeatTimer =			null;
+	self.heartBeatRate =			5000;	//1000 = 1s
 	self.HoldJoins =				[];	//Array to hold joins that are being repeated
-	self.HoldRepeatTimer =			500;	//Repeat at least every .5 seconds or control system releases digital.
+	self.HoldRepeatRate =			500;	//Repeat at least every .5 seconds or control system releases digital.
+	self.ConnectRepeatTimer =		null;
+	self.ConnectRepeatRate =		500;
 		
 	//Data receive buffer
 	self.ourData = 					"";
@@ -85,11 +87,9 @@ var CIP = function(params){
 	//Connection event handler
 	self.onConnectionChange = function (system, connected, remote) {
 		if (connected != false) {
-			self.connected = true;
-			self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40");	 //Send IP ID connect request
 			self.log("Socket Connected");
+			self.ConnectState(0);
 		} else {
-			self.connected = false;
 			self.log("Socket Disconnected");
 			self.ConnectState(0);
 		}
@@ -112,13 +112,13 @@ var CIP = function(params){
 	};
 
 	self.sendMsg = function(msg) {
-		self.log(msg)
-		CF.send(self.systemName, msg, CF.BINARY)
+		//self.log("Sending: " + self.toHex(msg));
+		CF.send(self.systemName, msg, CF.BINARY);
 	};
 	
 	//TCP receive event handler. Will process all packets even if multiple messages received for single data event
 	self.receive = function (itemName, data) {
-		self.log(data)
+		//self.log("Receiving: " + self.toHex(data));
 		self.ourData += data;
 		while (self.ourData.length >= 3) {
 			var type = self.ourData.charCodeAt(0);
@@ -192,6 +192,7 @@ var CIP = function(params){
 				}
 				CF.setJoin(sJoin,self.SJValues[sJoin], false);
 			} else if (dataType == 0x03) {
+				self.log("Update Request Incoming...")
 				//update request confirmation, we receive this just before processor sends the UR data
 			} else if (dataType == 0x08) {
 				//Date & Time - Only sent during update request, so driving a join would require a clock.  Just for reference, for now.
@@ -204,7 +205,7 @@ var CIP = function(params){
 				// IP ID Does not Exist, or booting, retry...
 				self.ConnectState(0)
 				self.log("IP ID Not Defined on Processor: " + self.IPID + ". Retrying...");	 //When program isn't fully booted on processor, it will reject
-				self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40");
+				//self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40");
 			} else if (len == 4) {
 				// IP ID registry Success
 				self.log("IP ID Registry Success")
@@ -248,12 +249,15 @@ var CIP = function(params){
 				self.log("Clearing Joins...");
 				CF.setJoins(self.ClearJoins, false);
 				self.log("Done Clearing Joins");
+				self.log("Starting Reconnect Procedure...")
+				clearInterval(self.ConnectRepeatTimer)
+				self.ConnectRepeatTimer = setInterval(function(){self.connectRepeat();}, self.ConnectRepeatRate);
 				break;
 			case 1:
+				clearInterval(self.ConnectRepeatTimer);
 				CF.setJoin("d" + self.DJoin_connectedFB, true);
 				self.log("Connected to IP ID: " + self.IPID);
-				//Watch pageflips
-				CF.watch(CF.PageFlipEvent, self.pageFlipEvent, true);
+				CF.watch(CF.PageFlipEvent, self.pageFlipEvent, true);	//Watch pageflips
 				break;
 		}
 	};
@@ -334,7 +338,7 @@ var CIP = function(params){
 		lowerByte = String.fromCharCode(rawJoin >> 8);
 		var msg = "\x05\x00\x06\x00\x00\x03\x27"+ upperByte + lowerByte;
 		self.sendMsg(msg);
-		self.HoldJoins[join] = setInterval(function(){self.sendMsg(msg);}, self.HoldRepeatTimer);	 //repeat the held join command
+		self.HoldJoins[join] = setInterval(function(){self.sendMsg(msg);}, self.HoldRepeatRate);	 //repeat the held join command
 	};
 	
 	self.userDigitalRelease = function (join, value, tokens) {
@@ -374,7 +378,13 @@ var CIP = function(params){
 	
 	self.onGUIResumed = function() {
 		self.log("Gui Resumed...")
-		self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40");	 //Send IP ID connect request
+		self.ConnectState(0);
+		//self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40");	 //Send IP ID connect request
+	};
+	
+	self.connectRepeat = function() {
+		self.log("Repeat Interval.")
+		self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40");
 	};
 	
 	//Initialization: General setup & Event monitors
@@ -390,4 +400,6 @@ var CIP = function(params){
 				"\x09" + "Digital Range: " + self.DJoin_Low + "-" + self.DJoin_High + "\r" +
 				"\x09" + "Analog Range: " + self.AJoin_Low + "-" + self.AJoin_High + "\r" +
 				"\x09" + "Serial Range: " + self.SJoin_Low + "-" + self.SJoin_High);
+				
+	self.ConnectState(0);	//Hack to get around iViewer not consistently triggering our events
 };
