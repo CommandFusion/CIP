@@ -397,7 +397,7 @@ var CIP = function(params){
 	
 	self.onGUIResumed = function() {
 		self.log("Gui Resumed...")
-		self.ConnectState(0);
+		//self.ConnectState(0);
 		//self.sendMsg("\x01\x00\x07\x7F\x00\x00\x01\x00" + String.fromCharCode("0x" + self.IPID) + "\x40");	 //Send IP ID connect request
 	};
 
