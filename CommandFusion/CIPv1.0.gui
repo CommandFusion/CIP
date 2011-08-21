@@ -52,7 +52,7 @@
     <token name="CIP1:Serial_High" value="255" persist="1" />
   </tokens>
   <scripts>
-    <script name="CIPv1.0.js" />
+    <script name="CIPv1.1.js" />
   </scripts>
   <page name="Startup" j="305" transition="None" subtype="None" time="0" ease="" start="1">
     <portrait />
